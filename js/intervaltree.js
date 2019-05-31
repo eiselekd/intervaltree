@@ -3,7 +3,7 @@ var Set = require("./set.js").Set;
 var interval = require("./interval.js");
 
 function IntervalTree(intervals=undefined) {
-    this.all_intervals = Set(intervals);
+    this.all_intervals = intervals;
     this.top_node = node.from_intervals(this.all_intervals);
 }
 

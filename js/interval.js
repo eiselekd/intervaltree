@@ -5,13 +5,13 @@ function _Interval(begin, end, data=undefined) {
     this.data = data;
 }
 
-_Interval.prototype.cmp = function(a,b) {
-    if (a.begin != b.begin) {
-        return ((a.begin - b.begin) < 0) ? -1 : 1;
-    } else if (a.end != b.end) {
-        return ((a.end - b.end) < 0) ? -1 : 1;
+_Interval.prototype.cmp = function(a) {
+    if (this.begin != a.begin) {
+        return ((this.begin - a.begin) < 0) ? -1 : 1;
+    } else if (this.end != a.end) {
+        return ((this.end - a.end) < 0) ? -1 : 1;
     }
-    return ((a.data - b.data))<0 ? -1 : 1;
+    return ((this.data - a.data))<0 ? -1 : 1;
 };
 
 function Interval(begin, end, data=undefined) {

@@ -5,9 +5,9 @@ function l2(num) {
     return Math.log2(num);
 }
 
-function Node(x_center=undefined, s_center=new Set(),left_node=undefined,right_node=undefined) {
+function Node(x_center=undefined, s_center=[],left_node=undefined,right_node=undefined) {
     this.x_center = x_center;
-    this.s_center = Set(s_center);
+    this.s_center = s_center;
     this.left_node = left_node;
     this.right_node = right_node;
     this.depth = 0;    // will be set when rotated
@@ -15,37 +15,43 @@ function Node(x_center=undefined, s_center=new Set(),left_node=undefined,right_n
     this.rotate();
 }
 
-function from_interval(cls, interval) {
+function from_interval(interval) {
     var center = interval.begin;
     return new Node(center, [interval]);
 }
 
-function from_intervals(cls, intervals) {
+function from_intervals(intervals) {
     if (!intervals || !intervals.length) {
         return undefined;
     }
     var node = new Node();
-    intervals.sort(Interval_cmp);
+    intervals.sort(function(a,b) {
+        if (a.begin != b.begin) {
+            return ((a.begin - b.begin) < 0) ? -1 : 1;
+        } else if (a.end != b.end) {
+            return ((a.end - b.end) < 0) ? -1 : 1;
+        }
+        return ((a.data - b.data))<0 ? -1 : 1;
+    });
     node = node.init_from_sorted(intervals);
     return node;
 }
 
-function init_from_sorted(intervals) {
+Node.prototype.init_from_sorted = function(intervals) {
     // assumes that intervals is a non-empty collection.
     // Else, next line raises IndexError
     var center_iv = intervals[((intervals.length) / 2)>>0];
     this.x_center = center_iv.begin;
-    this.s_center = Set();
+    this.s_center = [];
     var s_left = [];
     var s_right = [];
-    for (var _k in intervals) {
-        var v = intervals[_k];
+    for (var k of intervals) {
         if (k.end <= this.x_center) {
             s_left.push(k);
-        } else if (k.begin > self.x_center) {
+        } else if (k.begin > this.x_center) {
             s_right.push(k);
         } else {
-            this.s_center.add(k);
+            this.s_center.push(k);
         }
     }
     this.left_node = from_intervals(s_left);
@@ -78,7 +84,7 @@ Node.prototype.rotate = function() {
 
     this.refresh_balance();
     if (Math.abs(this.balance) < 2) {
-        return self;
+        return this;
     }
 
     // balance > 0  is the heavy side
