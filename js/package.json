@@ -1,0 +1,24 @@
+{
+   "name": "intervaltree",
+   "description": "covert from python to javascript",
+   "version": "0.0.1",
+   "keywords": [],
+   "main": "./index",
+   "maintainers": [
+      "dada <dada@dada.com>"
+   ],
+   "dependencies": {},
+   "devDependencies": {
+      "mocha": "*",
+      "chai": "*",
+      "chai-http": "*",
+      "should": "*",
+      "coveralls": "*",
+      "jshint": "*"
+   },
+   "scripts": {
+      "test": "make test-coveralls"
+   },
+   "repository": "git://github.com/eiselekd/intervaltree.git",
+   "license": "LGPLv3"
+}

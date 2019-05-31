@@ -1,19 +1,14 @@
+var assert = require('assert');
+var mocha = require('mocha');
+var chai = require('chai');
+var expect = chai.expect;
+var intervaltree = require("intervaltree.js");
 
-
-function a() {
-//    this[0] = 1;
-//    this[1] = 2;
-};
-
-v = new a();
-v[0] = 10;
-v[1] = 20;
-
-if (undefined) {
-    console.log("undef");
-}
-
-console.log(v[(1 > 2)>>0]);
-console.log(v[(2 > 1)>>0]);
-console.log(v[0]);
-console.log(v[1]);
+describe('intervaltree', function () {
+    describe('insertions', function () {
+	it('Overlap', function () {
+            var d = [];
+	    expect(d).to.be.eql([]);
+	});
+    });
+});
