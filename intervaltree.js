@@ -37,3 +37,4 @@ function IntervalTree(intervals=undefined)
 
 exports.IntervalTree = IntervalTree;
 exports.Interval = interval.Interval;
+exports.Set = Set;
