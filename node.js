@@ -7,12 +7,37 @@ function l2(num) {
 
 function Node(x_center=undefined, s_center=[],left_node=undefined,right_node=undefined) {
     this.x_center = x_center;
-    this.s_center = s_center;
+    this.s_center = Set(s_center);
     this.left_node = left_node;
     this.right_node = right_node;
     this.depth = 0;    // will be set when rotated
     this.balance = 0;  // ditto
     this.rotate();
+}
+
+Object.defineProperty(Node.prototype, '0', {
+    set: function(v) {
+        this.left_node = v;
+    },
+    get: function() {
+        return this.left_node;
+    }});
+
+Object.defineProperty(Node.prototype, '1', {
+    set: function(v) {
+        this.right_node = v;
+    },
+    get: function() {
+        return this.right_node;
+    }});
+
+function interval_cmp(a,b) {
+    if (a.begin != b.begin) {
+        return ((a.begin - b.begin) < 0) ? -1 : 1;
+    } else if (a.end != b.end) {
+        return ((a.end - b.end) < 0) ? -1 : 1;
+    }
+    return ((a.data - b.data))<0 ? -1 : 1;
 }
 
 function from_interval(interval) {
@@ -25,14 +50,7 @@ function from_intervals(intervals) {
         return undefined;
     }
     var node = new Node();
-    intervals.sort(function(a,b) {
-        if (a.begin != b.begin) {
-            return ((a.begin - b.begin) < 0) ? -1 : 1;
-        } else if (a.end != b.end) {
-            return ((a.end - b.end) < 0) ? -1 : 1;
-        }
-        return ((a.data - b.data))<0 ? -1 : 1;
-    });
+    intervals.sort(interval_cmp);
     node = node.init_from_sorted(intervals);
     return node;
 }
@@ -42,7 +60,7 @@ Node.prototype.init_from_sorted = function(intervals) {
     // Else, next line raises IndexError
     var center_iv = intervals[((intervals.length) / 2)>>0];
     this.x_center = center_iv.begin;
-    this.s_center = [];
+    this.s_center = Set([]);
     var s_left = [];
     var s_right = [];
     for (var k of intervals) {
@@ -59,12 +77,12 @@ Node.prototype.init_from_sorted = function(intervals) {
     return this.rotate();
 }
 
-function center_hit(interval) {
+Node.prototype.center_hit = function(interval) {
     return interval.contains_point(this.x_center);
 }
 
-function hit_branch(interval) {
-    return (interval.begin > this.x_center);
+Node.prototype.hit_branch = function(interval) {
+    return (interval.begin > this.x_center) ? 1 : 0;
 }
 
 Node.prototype.refresh_balance = function() {
@@ -81,7 +99,6 @@ Node.prototype.compute_depth = function() {
 };
 
 Node.prototype.rotate = function() {
-
     this.refresh_balance();
     if (Math.abs(this.balance) < 2) {
         return this;
@@ -122,6 +139,7 @@ Node.prototype.srotate = function() {
     //assert(this.balance != 0)
     var heavy = (this.balance > 0)>>0;
     var light = (! heavy)>>0;
+
     var save = this[heavy];
     //print("srotate: bal={},{}".format(this.balance, save.balance))
     //this.print_structure()
@@ -133,8 +151,8 @@ Node.prototype.srotate = function() {
     // Promote those to the new tip of the tree
     var promotees = save[light].s_center.filter(function(iv) { return save.center_hit(iv) });
     if (promotees) {
-        for (var _iv in promotees) {
-            var iv = promotees[_iv];
+        for (var iv of promotees) {
+            //console.log(iv);
             save[light] = save[light].remove(iv);  // may trigger pruning
         }
 
@@ -166,7 +184,7 @@ Node.prototype.add = function(interval) {
     } else {
         var direction = this.hit_branch(interval);
         if (! this[direction]) {
-            this[direction] = Node.from_interval(interval);
+            this[direction] = from_interval(interval);
             this.refresh_balance();
             return this;
         } else {
@@ -175,6 +193,87 @@ Node.prototype.add = function(interval) {
         }
     }
 };
+
+Node.prototype.remove = function(interval) {
+    //# since this is a list, called methods can set this to [1],
+    //# making it true
+    done = [];
+    return this.remove_interval_helper(interval, done, true);
+}
+
+Node.prototype.discard = function(interval) {
+    done = [];
+    return self.remove_interval_helper(interval, done, false);
+}
+
+Node.prototype.remove_interval_helper = function(interval, done, should_raise_error = false) {
+    /*
+      Returns self after removing interval and balancing.
+      If interval doesn't exist, raise ValueError.
+
+      This method may set done to [1] to tell all callers that
+      rebalancing has completed.
+
+      See Eternally Confuzzled's jsw_remove_r function (lines 1-32)
+      in his AVL tree article for reference.
+    */
+    //trace = interval.begin == 347 and interval.end == 353
+    //if trace: print('\nRemoving from {} interval {}'.format(
+    //   self.x_center, interval))
+
+    if (this.center_hit(interval)) {
+        //if trace: print('Hit at {}'.format(self.x_center))
+        if (!should_raise_error && !self.s_center.has(interval)) {
+            done.push(1);
+            //#if trace: print('Doing nothing.')
+            return this;
+        }
+        try {
+            //# raises error if interval not present - this is
+            //# desired.
+            this.s_center.remove(interval);
+        } catch(e) {
+            this.print_structure();
+            throw (interval);
+        }
+
+        if (this.s_center.length) {     //# keep this node
+            done.push(1);    //# no rebalancing necessary
+            //#if trace: print('Removed, no rebalancing.')
+            return this;
+        }
+
+        //# If we reach here, no intervals are left in self.s_center.
+        //# So, prune self.
+        return this.prune()
+
+    } else {  // interval not in s_center
+        var direction = this.hit_branch(interval);
+
+        if (!this[direction]) {
+            if (should_raise_error) {
+                throw false;
+            }
+            done.push(1);
+            return this;
+        }
+
+        //#if trace:
+        //#   print('Descending to {} branch'.format(
+        //#       ['left', 'right'][direction]
+        //#       ))
+        this[direction] = this[direction].remove_interval_helper(interval, done, should_raise_error);
+
+        //# Clean up
+        if (done.length == 0) {
+                //#if trace:
+                //#    print('Rotating {}'.format(self.x_center))
+                //#    self.print_structure()
+            return this.rotate();
+        }
+        return this;
+    }
+}
 
 Node.prototype.search_overlap = function(point_list) {
     result = Set();
@@ -186,7 +285,7 @@ Node.prototype.search_overlap = function(point_list) {
 };
 
 Node.prototype.search_point = function(point, result) {
-    for (k in this.s_center) {
+    for (k of this.s_center.a) {
         if (k.begin <= point < k.end) {
             result.add(k);
         } else {
@@ -242,12 +341,13 @@ Node.prototype.prune = function() {
 };
 
 Node.prototype.pop_greatest_child = function() {
+
     //print('Popping from {}'.format(this.x_center))
     if (! this.right_node) {         // This node is the greatest child.
         // To reduce the chances of an overlap with a parent, return
         // a child node containing the smallest possible number of
         // intervals, as close as possible to the maximum bound.
-        var ivs = [...this.s_center].sort(function(a,b) { return ((a.end == b.end) ? (a.begin-b.begin) : (a.end-b.end)); } );
+        var ivs = [...this.s_center.a].sort(function(a,b) { return ((a.end == b.end) ? (a.begin-b.begin) : (a.end-b.end)); } );
         //    sorted(this.s_center, key=attrgetter('end', 'begin'))
         var max_iv = ivs.pop();
         var new_x_center = this.x_center;
@@ -267,14 +367,13 @@ Node.prototype.pop_greatest_child = function() {
 
         // Create a new node with the largest x_center possible.
         var a = Set();
-        for (_iv in this.s_center) {
-            var iv = this.s_center[_iv];
+        for (var iv of this.s_center.a) {
             if (iv.contains_point(new_x_center)) {
                 a.add(iv);
             }
         }
-        var child = Node(new_x_center, a);
-        this.s_center -= child.s_center;
+        var child = new Node(new_x_center, a);
+        this.s_center.remove_set(child.s_center);
 
         //print('Pop hit! Returning child   = {}'.format(
         //    child.print_structure(tostring=True)
@@ -297,8 +396,7 @@ Node.prototype.pop_greatest_child = function() {
         [greatest_child, this[1]] = this[1].pop_greatest_child();
 
         // Move any overlaps into greatest_child
-        for (var _iv in Set(this.s_center)) {
-            var iv = this.s_center[_iv];
+        for (var iv of Set(this.s_center).a) {
             if (iv.contains_point(greatest_child.x_center)) {
                 this.s_center.remove(iv);
                 greatest_child.add(iv);
@@ -309,7 +407,7 @@ Node.prototype.pop_greatest_child = function() {
         //    greatest_child.print_structure(tostring=True)
         //    ))
         var new_this;
-        if (this.s_center) {
+        if (this.s_center.length) {
             //print('and returning newnode = {}'.format(
             //    new_this.print_structure(tostring=True)
             //    ))
@@ -329,8 +427,7 @@ Node.prototype.pop_greatest_child = function() {
 };
 
 Node.prototype.contains_point = function(p) {
-    for (var _iv in this.s_center) {
-        var iv = this.s_center[_iv];
+    for (var iv of this.s_center.a) {
         if (iv.contains_point(p)) {
             return True;
         }
@@ -433,26 +530,31 @@ Node.prototype.depth_score_helper = function(d, dopt) {
     return count;
 };
 
-function print_structure(indent=0, tostring=False) {
+Node.prototype.str = function() {
+    return "Node<" + this.x_center + ",depth=" + this.depth + ", balance=" + this.balance + ">";
+}
+
+Node.prototype.print_structure = function(indent=0, tostring=false) {
     var nl = '\n';
-    var sp = indent * '    ';
-    var rlist = [str(this) + nl];
-    if (this.s_center) {
-        var a = [...this.s_center].sort();
-        for (_iv in a) {
-            var iv = a[_iv];
-            rlist.push(sp + ' ' + repr(iv) + nl);
+    var sp = '';
+    for (var i = 0; i < indent; i ++)
+        sp += '    ';
+    var rlist = [this.str() + nl];
+    if (this.s_center.length) {
+        var a = [...this.s_center.a].sort(interval_cmp);
+        for (iv of a) {
+            rlist.push(sp + ' ' + iv.str() + nl);
         }
     }
     if (this.left_node) {
         rlist.push(sp + '<:  ');  // no CR
-        rlist.push(this.left_node.print_structure(indent + 1, True));
+        rlist.push(this.left_node.print_structure(indent + 1, true));
     }
     if (this.right_node) {
         rlist.push(sp + '>:  ');  // no CR
-        rlist.push(this.right_node.print_structure(indent + 1, True));
-        result = rlist.join('');
+        rlist.push(this.right_node.print_structure(indent + 1, true));
     }
+    var result = rlist.join('');
     if (tostring) {
         return result;
     } else {
