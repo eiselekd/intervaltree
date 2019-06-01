@@ -1,1 +1,1 @@
-intervall tree converted to js
+https://github.com/chaimleib/intervaltree.git intervall tree converted to js
