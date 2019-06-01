@@ -19,21 +19,25 @@ function Node(x_center=undefined, s_center=[],left_node=undefined,right_node=und
     this.rotate();
 }
 
-Object.defineProperty(Node.prototype, '0', {
+Object.defineProperty(Node.prototype, '0',
+{
     set: function(v) {
         this.left_node = v;
     },
     get: function() {
         return this.left_node;
-    }});
+    }
+});
 
-Object.defineProperty(Node.prototype, '1', {
+Object.defineProperty(Node.prototype, '1',
+{
     set: function(v) {
         this.right_node = v;
     },
     get: function() {
         return this.right_node;
-    }});
+    }
+});
 
 Node.prototype.init_from_sorted = function(intervals)
 {
@@ -280,15 +284,14 @@ Node.prototype.search_overlap = function(point_list)
 Node.prototype.search_point = function(point, result)
 {
     for (k of this.s_center.a) {
-        if (k.begin <= point < k.end) {
+        if (k.begin <= point && point < k.end) {
             result.add(k);
-        } else {
-            if ((point < this.x_center) && this[0]) {
-                return this[0].search_point(point, result);
-            } else if ((point > this.x_center) && this[1]) {
-                return this[1].search_point(point, result);
-            }
         }
+    }
+    if ((point < this.x_center) && this[0]) {
+        return this[0].search_point(point, result);
+    } else if ((point > this.x_center) && this[1]) {
+        return this[1].search_point(point, result);
     }
     return result;
 };

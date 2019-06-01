@@ -1,14 +1,22 @@
 
 var iv = require("./intervaltree.js");
 
-var tree0 = iv.IntervalTree([iv.Interval(-10, 10),      iv.Interval(-20.0, -10.0)]);
-var tree1 = iv.IntervalTree([iv.Interval(-20.0, -10.0), iv.Interval(-10, 10)]);
+var tree0 = iv.IntervalTree([]);
 
-for (var i = 0; i < 1000; i += 5) {
+for (var i = 0; i < 20; i += 5) {
     var i0 = iv.Interval(i-1,i+5+1);
     console.log("Add: "+i0.str());
     tree0.add(i0);
-
-    tree0.top_node.print_structure();
-
 }
+
+console.log(tree0.str());
+
+for (var i = 5; i < (20-5); i += 5) {
+    var i0 = iv.Interval(i-5-1,i+1)
+    var i1 = iv.Interval(i-1,i+5+1)
+    var a = tree0.at(i);
+    console.log(i+":");
+    console.log(a);
+    //.equal(Set(a));
+}
+
