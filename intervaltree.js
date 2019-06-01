@@ -1,13 +1,14 @@
 var node = require("./node.js");
-var Set = require("./set.js").Set;
 var interval = require("./interval.js");
 
-function _IntervalTree(intervals=undefined) {
+function _IntervalTree(intervals=undefined)
+{
     this.all_intervals = intervals;
     this.top_node = node.from_intervals(this.all_intervals);
 }
 
-_IntervalTree.prototype.add = function(interval) {
+_IntervalTree.prototype.add = function(interval)
+{
     if (this.top_node == undefined) {
         this.top_node = node.from_interval(interval);
     } else {
@@ -15,7 +16,8 @@ _IntervalTree.prototype.add = function(interval) {
     }
 }
 
-function IntervalTree(intervals=undefined) {
+function IntervalTree(intervals=undefined)
+{
     return new _IntervalTree(intervals);
 }
 

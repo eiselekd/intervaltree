@@ -1,11 +1,15 @@
-var Interval = require("./interval.js").Interval;
-var Set = require("./set.js").Set;
+var interval = require("./interval.js");
+var Interval = interval.Interval;
+var interval_cmp = interval.interval_cmp;
+var Set      = require("./set.js").Set;
 
-function l2(num) {
+function l2(num)
+{
     return Math.log2(num);
 }
 
-function Node(x_center=undefined, s_center=[],left_node=undefined,right_node=undefined) {
+function Node(x_center=undefined, s_center=[],left_node=undefined,right_node=undefined)
+{
     this.x_center = x_center;
     this.s_center = Set(s_center);
     this.left_node = left_node;
@@ -31,31 +35,8 @@ Object.defineProperty(Node.prototype, '1', {
         return this.right_node;
     }});
 
-function interval_cmp(a,b) {
-    if (a.begin != b.begin) {
-        return ((a.begin - b.begin) < 0) ? -1 : 1;
-    } else if (a.end != b.end) {
-        return ((a.end - b.end) < 0) ? -1 : 1;
-    }
-    return ((a.data - b.data))<0 ? -1 : 1;
-}
-
-function from_interval(interval) {
-    var center = interval.begin;
-    return new Node(center, [interval]);
-}
-
-function from_intervals(intervals) {
-    if (!intervals || !intervals.length) {
-        return undefined;
-    }
-    var node = new Node();
-    intervals.sort(interval_cmp);
-    node = node.init_from_sorted(intervals);
-    return node;
-}
-
-Node.prototype.init_from_sorted = function(intervals) {
+Node.prototype.init_from_sorted = function(intervals)
+{
     // assumes that intervals is a non-empty collection.
     // Else, next line raises IndexError
     var center_iv = intervals[((intervals.length) / 2)>>0];
@@ -77,28 +58,33 @@ Node.prototype.init_from_sorted = function(intervals) {
     return this.rotate();
 }
 
-Node.prototype.center_hit = function(interval) {
+Node.prototype.center_hit = function(interval)
+{
     return interval.contains_point(this.x_center);
 }
 
-Node.prototype.hit_branch = function(interval) {
+Node.prototype.hit_branch = function(interval)
+{
     return (interval.begin > this.x_center) ? 1 : 0;
 }
 
-Node.prototype.refresh_balance = function() {
+Node.prototype.refresh_balance = function()
+{
     var left_depth = this.left_node ? this.left_node.depth : 0;
     var right_depth = this.right_node ? this.right_node.depth : 0;
     this.depth = 1 + Math.max(left_depth, right_depth);
     this.balance = right_depth - left_depth;
 };
 
-Node.prototype.compute_depth = function() {
+Node.prototype.compute_depth = function()
+{
     var left_depth = this.left_node ? this.left_node.compute_depth() : 0;
     var right_depth = self.right_node ? this.right_node.compute_depth() : 0;
     return (1 + Math.max(left_depth, right_depth));
 };
 
-Node.prototype.rotate = function() {
+Node.prototype.rotate = function()
+{
     this.refresh_balance();
     if (Math.abs(this.balance) < 2) {
         return this;
@@ -125,7 +111,8 @@ Node.prototype.rotate = function() {
     }
 };
 
-Node.prototype.srotate = function() {
+Node.prototype.srotate = function()
+{
     /*
       """Single rotation. Assumes that balance is +-2."""
       #     this        save         save
@@ -165,7 +152,8 @@ Node.prototype.srotate = function() {
     }
 };
 
-Node.prototype.drotate = function() {
+Node.prototype.drotate = function()
+{
     //# First rotation
     my_heavy = this.balance > 0;
     this[my_heavy] = this[my_heavy].srotate();
@@ -177,7 +165,8 @@ Node.prototype.drotate = function() {
     return result;
 };
 
-Node.prototype.add = function(interval) {
+Node.prototype.add = function(interval)
+{
     if (this.center_hit(interval)) {
         this.s_center.add(interval);
         return this;
@@ -194,19 +183,22 @@ Node.prototype.add = function(interval) {
     }
 };
 
-Node.prototype.remove = function(interval) {
+Node.prototype.remove = function(interval)
+{
     //# since this is a list, called methods can set this to [1],
     //# making it true
     done = [];
     return this.remove_interval_helper(interval, done, true);
 }
 
-Node.prototype.discard = function(interval) {
+Node.prototype.discard = function(interval)
+{
     done = [];
     return self.remove_interval_helper(interval, done, false);
 }
 
-Node.prototype.remove_interval_helper = function(interval, done, should_raise_error = false) {
+Node.prototype.remove_interval_helper = function(interval, done, should_raise_error = false)
+{
     /*
       Returns self after removing interval and balancing.
       If interval doesn't exist, raise ValueError.
@@ -275,7 +267,8 @@ Node.prototype.remove_interval_helper = function(interval, done, should_raise_er
     }
 }
 
-Node.prototype.search_overlap = function(point_list) {
+Node.prototype.search_overlap = function(point_list)
+{
     result = Set();
     for (var _j in point_list) {
         var j = point_list[_j];
@@ -284,7 +277,8 @@ Node.prototype.search_overlap = function(point_list) {
     return result;
 };
 
-Node.prototype.search_point = function(point, result) {
+Node.prototype.search_point = function(point, result)
+{
     for (k of this.s_center.a) {
         if (k.begin <= point < k.end) {
             result.add(k);
@@ -299,7 +293,8 @@ Node.prototype.search_point = function(point, result) {
     return result;
 };
 
-Node.prototype.prune = function() {
+Node.prototype.prune = function()
+{
     if ( (! this[0]) ||  !( this[1]) ) {    // if I have an empty branch
         var direction = (!this[0])>>0;       // graft the other branch here
         //if trace:
@@ -340,7 +335,8 @@ Node.prototype.prune = function() {
     }
 };
 
-Node.prototype.pop_greatest_child = function() {
+Node.prototype.pop_greatest_child = function()
+{
 
     //print('Popping from {}'.format(this.x_center))
     if (! this.right_node) {         // This node is the greatest child.
@@ -426,7 +422,8 @@ Node.prototype.pop_greatest_child = function() {
     }
 };
 
-Node.prototype.contains_point = function(p) {
+Node.prototype.contains_point = function(p)
+{
     for (var iv of this.s_center.a) {
         if (iv.contains_point(p)) {
             return True;
@@ -436,11 +433,13 @@ Node.prototype.contains_point = function(p) {
     return (branch && branch.contains_point(p));
 };
 
-Node.prototype.all_children = function() {
+Node.prototype.all_children = function()
+{
     return this.all_children_helper(Set());
 };
 
-Node.prototype.all_children_helper = function(result) {
+Node.prototype.all_children_helper = function(result)
+{
     result.update(this.s_center);
     if (this[0]) {
         this[0].all_children_helper(result);
@@ -451,14 +450,22 @@ Node.prototype.all_children_helper = function(result) {
     return result;
 };
 
-Node.prototype.verify = function(parents=set()) {
-    assert(isinstance(this.s_center, set));
+function assert(condition, message)
+{
+    if (!condition) {
+        throw message || "Assertion failed";
+    }
+}
+
+Node.prototype.verify = function(parents=set())
+{
+    assert(this.s_center instanceof aset);
 
     var bal = this.balance;
-    assert (Math.abs(bal) < 2,  "Error: Rotation should have happened, but didn't! \n{}".format(this.print_structure(tostring=True) ));
+    assert (Math.abs(bal) < 2,  "Error: Rotation should have happened, but didn't! \n" + this.print_structure(tostring=True) );
     this.refresh_balance();
-    assert (bal == this.balance,"Error: this.balance not set correctly! \n{}".format(this.print_structure(tostring=True)));
-    assert (this.s_center, "Error: s_center is empty! \n{}".format( this.print_structure(tostring=True)));
+    assert (bal == this.balance,"Error: this.balance not set correctly! \n" + this.print_structure(tostring=True));
+    assert (this.s_center, "Error: s_center is empty! \n " + this.print_structure(tostring=True));
 
     var _iv;
     for (_iv in this.s_center) {
@@ -470,28 +477,21 @@ Node.prototype.verify = function(parents=set()) {
         var _p = [...parents].sort();
         for (var _parent in _p) {
             var parent = _p[_parent];
-            assert(! iv.contains_point(parent), "Error: Overlaps ancestor ({})! \n{}\n\n{}".format(parent, iv, this.print_structure(tostring=True)))
+            assert(! iv.contains_point(parent), "Error: Overlaps ancestor ("+parent+")! \n"+iv+"\n\n" + this.print_structure(tostring=True))
         }
     }
     if (this[0]) {
-        assert (this[0].x_center < this.x_center, "Error: Out-of-order left child! {}".format(this.x_center));
+        assert (this[0].x_center < this.x_center, "Error: Out-of-order left child! "+this.x_center);
         this[0].verify(parents.union([this.x_center]));
     }
     if (this[1]) {
-        assert (this[1].x_center > this.x_center, "Error: Out-of-order right child! {}".format(this.x_center));
+        assert (this[1].x_center > this.x_center, "Error: Out-of-order right child! "+this.x_center);
         this[1].verify(parents.union([this.x_center]));
     }
 };
 
-Node.prototype.__str__ = function() {
-    return "Node<{0}, depth={1}, balance={2}>".format(
-        this.x_center,
-        this.depth,
-        this.balance
-    );
-};
-
-Node.prototype.count_nodes = function() {
+Node.prototype.count_nodes = function()
+{
     count = 1;
     if (this.left_node) {
         count += this.left_node.count_nodes();
@@ -502,7 +502,8 @@ Node.prototype.count_nodes = function() {
     return count;
 };
 
-Node.prototype.depth_score = function(n, m) {
+Node.prototype.depth_score = function(n, m)
+{
     if (n == 0) {
         return 0.0;
     }
@@ -512,7 +513,8 @@ Node.prototype.depth_score = function(n, m) {
     return f * this.depth_score_helper(1, dopt);
 };
 
-Node.prototype.depth_score_helper = function(d, dopt) {
+Node.prototype.depth_score_helper = function(d, dopt)
+{
     // di is how may levels deeper than optimal d is
     var di = d - dopt;
     var count = 0;
@@ -530,11 +532,13 @@ Node.prototype.depth_score_helper = function(d, dopt) {
     return count;
 };
 
-Node.prototype.str = function() {
+Node.prototype.str = function()
+{
     return "Node<" + this.x_center + ",depth=" + this.depth + ", balance=" + this.balance + ">";
 }
 
-Node.prototype.print_structure = function(indent=0, tostring=false) {
+Node.prototype.print_structure = function(indent=0, tostring=false)
+{
     var nl = '\n';
     var sp = '';
     for (var i = 0; i < indent; i ++)
@@ -562,6 +566,22 @@ Node.prototype.print_structure = function(indent=0, tostring=false) {
     }
 };
 
+function from_interval(interval)
+{
+    var center = interval.begin;
+    return new Node(center, [interval]);
+}
+
+function from_intervals(intervals)
+{
+    if (!intervals || !intervals.length) {
+        return undefined;
+    }
+    var node = new Node();
+    intervals.sort(interval_cmp);
+    node = node.init_from_sorted(intervals);
+    return node;
+}
 
 exports.from_intervals = from_intervals;
-exports.from_interval = from_interval;
+exports.from_interval  = from_interval;

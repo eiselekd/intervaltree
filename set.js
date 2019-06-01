@@ -1,3 +1,4 @@
+
 function aset(a=[]) {
     this.h = {};
     this.a = [];
@@ -57,7 +58,6 @@ aset.prototype.remove_set = function(a) {
         f.remove(e);
     });
 }
-
 
 Object.defineProperty(aset.prototype, 'length', {get: function() {
     return this.a.length;
